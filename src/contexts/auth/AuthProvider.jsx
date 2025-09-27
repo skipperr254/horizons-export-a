@@ -96,6 +96,8 @@ export const AuthProvider = ({ children }) => {
           error,
         } = await supabase.auth.getSession();
 
+        console.log("Done awaiting");
+
         if (!mountedRef.current) return;
 
         if (error) {
