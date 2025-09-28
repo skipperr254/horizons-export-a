@@ -18,6 +18,19 @@ import {
   updateUserProfile,
 } from "./authActions";
 
+// Safari detection
+const isSafari = () => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  return userAgent.includes("safari") && !userAgent.includes("chrome");
+};
+
+// Mobile Safari detection
+const isMobileSafari = () => {
+  return (
+    isSafari() && /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())
+  );
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -74,8 +87,6 @@ export const AuthProvider = ({ children }) => {
     const initialize = async () => {
       if (initializingRef.current) return;
       initializingRef.current = true;
-
-      console.log("Inside the initialize function")
 
       try {
         console.log("🔄 Initializing auth...");
