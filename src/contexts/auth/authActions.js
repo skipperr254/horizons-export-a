@@ -95,11 +95,31 @@ export const signInWithGoogleUser = async (setAuthError) => {
   try {
     setAuthError(null);
     console.log('🔐 Signing in with Google...');
+    
+    // Safari detection
+    const isSafari = () => {
+      const userAgent = navigator.userAgent.toLowerCase();
+      return userAgent.includes('safari') && !userAgent.includes('chrome');
+    };
+
+    const options = {
+      redirectTo: `${window.location.origin}/auth/callback`,
+    };
+
+    // Safari-specific configuration for better compatibility
+    if (isSafari()) {
+      options.queryParams = {
+        access_type: 'offline',
+        prompt: 'consent',
+        response_type: 'code'
+      };
+      // Force redirect mode for Safari instead of popup
+      options.skipBrowserRedirect = false;
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options,
     });
 
     if (error) {
