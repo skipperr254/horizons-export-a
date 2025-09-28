@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
       if (initializingRef.current) return;
       initializingRef.current = true;
 
-      console.log("Inside the initialize function in useEffect")
+      console.log("Inside the initialize function")
 
       try {
         console.log("🔄 Initializing auth...");
@@ -138,7 +138,12 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-     initialize();
+    // Add small delay for Safari to prevent race conditions
+    if (isSafari()) {
+      setTimeout(initialize, 100);
+    } else {
+      initialize();
+    }
 
     return () => {
       mountedRef.current = false;
