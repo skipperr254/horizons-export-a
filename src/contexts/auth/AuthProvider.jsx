@@ -217,6 +217,9 @@ export const AuthProvider = ({ children }) => {
     setIsNewUser,
   }), [user, login, register, logout, updateUser, loading, authError, initialized, reauthenticate, canAccessPremiumFeatures, subscriptionStatus, refreshUserProfile, signInWithGoogle, isNewUser]);
 
+  console.log(loading)
+  console.log(initialized)
+  
   if (loading && !initialized) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
