@@ -387,35 +387,59 @@ import React, {
       return false;
     }, [user]);
   
-    const contextValue = React.useMemo(() => ({
-        user,
-        login,
-        register,
-        logout,
-        updateUser,
-        loading,
-        authError,
-        initialized,
-        reauthenticate,
-        canAccessPremiumFeatures,
-        subscriptionStatus,
-        refreshUserProfile,
-      }),
-      [
-        user,
-        login,
-        register,
-        logout,
-        updateUser,
-        loading,
-        authError,
-        initialized,
-        reauthenticate,
-        canAccessPremiumFeatures,
-        subscriptionStatus,
-        refreshUserProfile,
-      ]
-    );
+  const signInWithGoogle = useCallback(async () => {
+    try {
+      setAuthError(null);
+      console.log('🔐 Signing in with Google...');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        console.error('❌ Google sign-in error:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('❌ Google sign-in failed:', error);
+      setAuthError(error.message);
+      throw error;
+    }
+  }, []);
+
+  const contextValue = React.useMemo(() => ({
+      user,
+      login,
+      register,
+      logout,
+      updateUser,
+      loading,
+      authError,
+      initialized,
+      reauthenticate,
+      canAccessPremiumFeatures,
+      subscriptionStatus,
+      refreshUserProfile,
+      signInWithGoogle,
+    }),
+    [
+      user,
+      login,
+      register,
+      logout,
+      updateUser,
+      loading,
+      authError,
+      initialized,
+      reauthenticate,
+      canAccessPremiumFeatures,
+      subscriptionStatus,
+      refreshUserProfile,
+      signInWithGoogle,
+    ]
+  );
   
     if (loading && !initialized) {
       const isSafari = () => {
