@@ -165,7 +165,9 @@ function App() {
               <TooltipProvider>
                 <ContentSecurityLayer>
                   <div className="min-h-screen bg-background font-sans antialiased overflow-x-hidden">
-                    <AppRoutes />
+                    <ProtectedRoute>
+                      <DashboardPage />
+                    </ProtectedRoute>
                     <Toaster />
                     <CookieConsentBanner />
                   </div>
