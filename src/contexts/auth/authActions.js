@@ -104,6 +104,7 @@ export const signInWithGoogleUser = async (setAuthError) => {
 
     const options = {
       redirectTo: `${window.location.origin}/auth/callback`,
+      flowType: 'pkce'
     };
 
     // Safari-specific configuration for better compatibility

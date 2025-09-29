@@ -33,6 +33,8 @@ const AuthCallbackPage = () => {
 
                 // Handle PKCE flow (code parameter)
                 const code = searchParams.get('code');
+                console.log("Search params: ", searchParams)
+                console.log("We got the code")
                 if (code) {
                     console.log('🔑 Processing PKCE code exchange...');
                     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
@@ -61,6 +63,8 @@ const AuthCallbackPage = () => {
                         token_type: tokenType,
                         expires_in: expiresIn ? parseInt(expiresIn) : undefined,
                     });
+
+                    
                     
                     if (sessionError) throw sessionError;
                     
