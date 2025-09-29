@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
-  const [initialized, setInitialized] = useState(false);
+  const [initialized, setInitialized] = useState(true);
   const [isNewUser, setIsNewUser] = useState(false);
 
   const authListenerRef = useRef(null);
@@ -118,6 +118,7 @@ export const AuthProvider = ({ children }) => {
                       expires_at: expiresAt ? parseInt(expiresAt) : undefined,
                     });
                     window.history.replaceState({}, document.title, currentUrl.origin + '/auth/callback');
+                    console.log("Sessions set")
                   } catch (setErr) {
                     console.error('❌ Setting session from URL tokens failed:', setErr);
                   }
