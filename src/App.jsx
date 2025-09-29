@@ -163,13 +163,13 @@ function App() {
           <AuthProvider>
             <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
               <TooltipProvider>
-                <ContentSecurityLayer>
+                {/* <ContentSecurityLayer> */}
                   <div className="min-h-screen bg-background font-sans antialiased overflow-x-hidden">
                     <AppRoutes />
                     <Toaster />
                     <CookieConsentBanner />
                   </div>
-                </ContentSecurityLayer>
+                {/* </ContentSecurityLayer> */}
               </TooltipProvider>
             </ThemeProvider>
           </AuthProvider>
