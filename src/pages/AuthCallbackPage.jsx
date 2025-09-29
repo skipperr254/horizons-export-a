@@ -13,6 +13,12 @@ const AuthCallbackPage = () => {
     const [processing, setProcessing] = useState(true);
     const [waitingForAuth, setWaitingForAuth] = useState(false);
 
+    // Safari detection
+    const isSafari = () => {
+        const userAgent = navigator.userAgent.toLowerCase();
+        return userAgent.includes('safari') && !userAgent.includes('chrome');
+    };
+
     useEffect(() => {
         if (!initialized) return;
 
@@ -31,10 +37,8 @@ const AuthCallbackPage = () => {
                     throw new Error(errorDescription || error);
                 }
 
-                // Handle PKCE flow (code parameter)
+                // Handle PKCE flow (code parameter) - PREFERRED
                 const code = searchParams.get('code');
-                console.log("Search params: ", searchParams)
-                console.log("We got the code")
                 if (code) {
                     console.log('🔑 Processing PKCE code exchange...');
                     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
@@ -48,7 +52,7 @@ const AuthCallbackPage = () => {
                     return;
                 }
 
-                // Handle implicit flow (access_token in hash/search)
+                // Handle implicit flow (access_token in hash/search) - SAFARI FALLBACK
                 const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
                 if (accessToken) {
                     console.log('🔐 Processing implicit flow tokens...');
@@ -57,16 +61,58 @@ const AuthCallbackPage = () => {
                     const tokenType = hashParams.get('token_type') || searchParams.get('token_type') || 'bearer';
                     const expiresIn = hashParams.get('expires_in') || searchParams.get('expires_in');
                     
-                    const { error: sessionError } = await supabase.auth.setSession({
-                        access_token: accessToken,
-                        refresh_token: refreshToken,
-                        token_type: tokenType,
-                        expires_in: expiresIn ? parseInt(expiresIn) : undefined,
-                    });
-
-                    
-                    
-                    if (sessionError) throw sessionError;
+                    // Safari-specific handling
+                    if (isSafari()) {
+                        console.log('🍎 Safari detected - using alternative session handling');
+                        
+                        try {
+                            // Method 1: Try with a timeout
+                            const sessionPromise = supabase.auth.setSession({
+                                access_token: accessToken,
+                                refresh_token: refreshToken,
+                                token_type: tokenType,
+                                expires_in: expiresIn ? parseInt(expiresIn) : undefined,
+                            });
+                            
+                            const timeoutPromise = new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error('Safari session timeout')), 5000)
+                            );
+                            
+                            await Promise.race([sessionPromise, timeoutPromise]);
+                            
+                        } catch (safariError) {
+                            console.warn('⚠️ Safari setSession failed, trying manual approach:', safariError);
+                            
+                            // Method 2: Manual session creation for Safari
+                            try {
+                                // Store tokens in sessionStorage temporarily (Safari allows this)
+                                sessionStorage.setItem('supabase_auth_token', JSON.stringify({
+                                    access_token: accessToken,
+                                    refresh_token: refreshToken,
+                                    token_type: tokenType,
+                                    expires_in: expiresIn ? parseInt(expiresIn) : undefined,
+                                }));
+                                
+                                // Force a page refresh to let Supabase pick up the session
+                                window.location.href = '/dashboard';
+                                return;
+                                
+                            } catch (manualError) {
+                                console.error('❌ Manual session creation failed:', manualError);
+                                throw new Error('Safari compatibility issue - unable to set session');
+                            }
+                        }
+                    } else {
+                        // Non-Safari browsers
+                        const { error: sessionError } = await supabase.auth.setSession({
+                            access_token: accessToken,
+                            refresh_token: refreshToken,
+                            token_type: tokenType,
+                            expires_in: expiresIn ? parseInt(expiresIn) : undefined,
+                        });
+                        
+                        if (sessionError) throw sessionError;
+                    }
                     
                     // Clear URL after successful processing
                     window.history.replaceState({}, document.title, window.location.pathname);
@@ -133,13 +179,16 @@ const AuthCallbackPage = () => {
                 });
                 navigate('/login', { replace: true });
             }
-        }, 10000); // 10 second timeout
+        }, 15000); // 15 second timeout for Safari
 
         return () => clearTimeout(timeout);
     }, [waitingForAuth, user, navigate, toast]);
 
     const getMessage = () => {
         if (processing) {
+            if (isSafari()) {
+                return 'Safari için özel işlem yapılıyor...';
+            }
             return 'OAuth doğrulanıyor...';
         }
         if (waitingForAuth) {
@@ -164,6 +213,11 @@ const AuthCallbackPage = () => {
                     {waitingForAuth && (
                         <p className="text-xs text-muted-foreground mt-2">
                             Oturum bilgileri işleniyor, lütfen bekleyin...
+                        </p>
+                    )}
+                    {isSafari() && processing && (
+                        <p className="text-xs text-amber-600 mt-2">
+                            Safari algılandı - bu işlem biraz daha uzun sürebilir
                         </p>
                     )}
                 </div>

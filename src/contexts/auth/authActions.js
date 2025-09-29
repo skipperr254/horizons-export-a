@@ -104,7 +104,7 @@ export const signInWithGoogleUser = async (setAuthError) => {
 
     const options = {
       redirectTo: `${window.location.origin}/auth/callback`,
-      flowType: 'pkce'
+      flowType: 'pkce',
     };
 
     // Safari-specific configuration for better compatibility
@@ -115,7 +115,8 @@ export const signInWithGoogleUser = async (setAuthError) => {
         response_type: 'code'
       };
       // Force redirect mode for Safari instead of popup
-      // options.skipBrowserRedirect = false;
+      options.skipBrowserRedirect = false;
+      options.scopes = 'openid email profile'
     }
 
     const { error } = await supabase.auth.signInWithOAuth({
