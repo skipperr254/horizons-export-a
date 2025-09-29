@@ -139,7 +139,7 @@ export const AuthProvider = ({ children }) => {
         authListenerRef.current = null;
       }
     };
-  }, [loadProfile]);
+  }, []);
 
   const login = useCallback((email, password) => loginUser(email, password, setAuthError), []);
   const register = useCallback((name, email, password) => registerUser(name, email, password, setAuthError), []);
@@ -172,6 +172,7 @@ export const AuthProvider = ({ children }) => {
     updateUser,
     loading,
     authError,
+    setAuthError,
     initialized,
     reauthenticate,
     canAccessPremiumFeatures,
@@ -181,7 +182,7 @@ export const AuthProvider = ({ children }) => {
     isNewUser,
     setIsNewUser,
   }), [
-    user, login, register, logout, updateUser, loading, authError, 
+    user, login, register, logout, updateUser, loading, authError, setAuthError,
     initialized, reauthenticate, canAccessPremiumFeatures, 
     subscriptionStatus, refreshUserProfile, signInWithGoogle, isNewUser
   ]);

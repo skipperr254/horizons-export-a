@@ -49,7 +49,7 @@ const LoginPage = () => {
   const [slidesLoading, setSlidesLoading] = useState(true);
   const [resending, setResending] = useState(false);
 
-  const { login, register, signInWithGoogle, user, initialized } = useAuth();
+  const { login, register, setAuthError, user, initialized } = useAuth();
   const { toast } = useToast();
   
   const { errors, setErrors, validateAllFields, submitted, setSubmitted } = useFormValidation(formData, acceptTerms, isLogin);
@@ -211,9 +211,16 @@ const LoginPage = () => {
   const handleGoogleSignIn = async () => {
     setSocialLoading(true);
     try {
-      await signInWithGoogle();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin + "/dashboard",
+        },
+      });
+      if (error) throw error;
     } catch (error) {
       const friendlyMessage = handleGoogleSignInError(error);
+      setAuthError(error.message);
       toast({
         title: 'Google ile Giriş Hatası',
         description: friendlyMessage,

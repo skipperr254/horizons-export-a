@@ -9,6 +9,7 @@ export const AuthContext = createContext({
   updateUser: async () => {},
   loading: true,
   authError: null,
+  setAuthError: () => {},
   initialized: false,
   reauthenticate: async () => {},
   canAccessPremiumFeatures: false,
