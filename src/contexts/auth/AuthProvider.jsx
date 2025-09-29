@@ -29,6 +29,23 @@ export const AuthProvider = ({ children }) => {
   const lastSessionRef = useRef(null);
   const mountedRef = useRef(true);
 
+  // Check if storage is accessible
+try {
+  localStorage.setItem('test', 'test');
+  localStorage.removeItem('test');
+  console.log('✅ LocalStorage accessible');
+} catch (e) {
+  console.error('❌ LocalStorage blocked:', e);
+}
+
+try {
+  sessionStorage.setItem('test', 'test');
+  sessionStorage.removeItem('test');
+  console.log('✅ SessionStorage accessible');
+} catch (e) {
+  console.error('❌ SessionStorage blocked:', e);
+}
+
   const loadProfile = useCallback(async (authUser, preserveUser = null) => {
     if (!mountedRef.current) return;
 
