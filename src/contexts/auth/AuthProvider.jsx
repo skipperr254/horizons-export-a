@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }) => {
         if (!authListenerRef.current) {
           const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-              console.log('🔔 Auth state changed:', event);
+              console.log('🔔 Auth state changed:', event, session?.user?.email || 'no user');
               
               if (!mountedRef.current) return;
 
@@ -105,6 +105,10 @@ export const AuthProvider = ({ children }) => {
               } else if (event === 'USER_UPDATED' && session?.user) {
                 console.log('👤 User updated:', session.user.email);
                 await loadProfile(session.user);
+              } else if (event === 'INITIAL_SESSION' && session?.user) {
+                console.log('🎯 Initial session found:', session.user.email);
+                await loadProfile(session.user);
+                setAuthError(null);
               }
             }
           );
