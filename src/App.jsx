@@ -157,7 +157,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      {/* <HelmetProvider> */}
+      <HelmetProvider>
         <SecurityHeaders />
         <Router>
           <AuthProvider>
@@ -174,7 +174,7 @@ function App() {
             </ThemeProvider>
           </AuthProvider>
         </Router>
-      {/* </HelmetProvider> */}
+      </HelmetProvider>
     </ErrorBoundary>
   );
 }
