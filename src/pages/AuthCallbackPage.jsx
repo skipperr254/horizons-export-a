@@ -116,6 +116,7 @@ const AuthCallbackPage = () => {
         // For Safari or when manual processing is needed
         if (isSafari() || window.location.hash.includes('access_token') || window.location.search.includes('access_token')) {
             handleOAuthCallback();
+            navigate('/dashboard', { replace: true });
             return;
         }
 

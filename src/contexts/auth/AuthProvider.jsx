@@ -6,17 +6,6 @@ import { loadUserProfile } from './AuthHelpers';
 import { handleAuthStateChange } from './authHandlers';
 import { loginUser, registerUser, signInWithGoogleUser, logoutUser, updateUserProfile } from './authActions';
 
-// Safari detection
-const isSafari = () => {
-  const userAgent = navigator.userAgent.toLowerCase();
-  return userAgent.includes('safari') && !userAgent.includes('chrome');
-};
-
-// Mobile Safari detection
-const isMobileSafari = () => {
-  return isSafari() && /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -66,52 +55,21 @@ export const AuthProvider = ({ children }) => {
     mountedRef.current = true;
 
     const initialize = async () => {
+      console.log("We are inside initializing. First line in the function")
+
       if (initializingRef.current) return;
+
       initializingRef.current = true;
 
       try {
         console.log('🔄 Initializing auth...');
 
-        // Adjust timeout based on browser and device
-        let timeoutDuration = 10000; // Default 10 seconds
-        if (isMobileSafari()) {
-          timeoutDuration = 20000; // 20 seconds for mobile Safari
-        } else if (isSafari()) {
-          timeoutDuration = 15000; // 15 seconds for desktop Safari
-        }
+        console.log("Just before supabase.auth.getSession")
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log("Immediately after supabase.auth.getSession")
 
-        console.log(`⏱️ Using ${timeoutDuration}ms timeout for ${isMobileSafari() ? 'Mobile Safari' : isSafari() ? 'Safari' : 'other browsers'}`);
-
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Session timeout')), timeoutDuration)
-        );
-
-        let session, error;
-
-        try {
-          const result = await Promise.race([sessionPromise, timeoutPromise]);
-          session = result.data?.session;
-          error = result.error;
-        } catch (timeoutError) {
-          console.warn('⚠️ Session check timed out, trying alternative approach...');
-
-          // Safari fallback: Try without timeout
-          if (isSafari()) {
-            try {
-              const fallbackResult = await supabase.auth.getSession();
-              session = fallbackResult.data?.session;
-              error = fallbackResult.error;
-              console.log('✅ Fallback session check succeeded');
-            } catch (fallbackError) {
-              console.error('❌ Fallback session check failed:', fallbackError);
-              error = fallbackError;
-            }
-          } else {
-            throw timeoutError;
-          }
-        }
-
+        console.log("Checking if mounted: ", mountedRef.current)
+        
         if (!mountedRef.current) return;
 
         if (error) {
@@ -158,13 +116,6 @@ export const AuthProvider = ({ children }) => {
         }
       }
     };
-
-    // Add small delay for Safari to prevent race conditions
-    if (isSafari()) {
-      setTimeout(initialize, 100);
-    } else {
-      initialize();
-    }
 
     return () => {
       mountedRef.current = false;
@@ -226,9 +177,6 @@ export const AuthProvider = ({ children }) => {
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-sm text-muted-foreground">Yükleniyor...</p>
-          {isSafari() && (
-            <p className="text-xs text-muted-foreground mt-2">Safari algılandı, biraz daha uzun sürebilir...</p>
-          )}
         </div>
       </div>
     );
