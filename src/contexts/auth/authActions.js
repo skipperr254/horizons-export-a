@@ -114,7 +114,7 @@ export const signInWithGoogleUser = async (setAuthError) => {
         response_type: 'code'
       };
       // Force redirect mode for Safari instead of popup
-      options.skipBrowserRedirect = false;
+      // options.skipBrowserRedirect = false;
     }
 
     const { error } = await supabase.auth.signInWithOAuth({
