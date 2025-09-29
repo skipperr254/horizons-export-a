@@ -6,6 +6,17 @@ import { loadUserProfile } from './AuthHelpers';
 import { handleAuthStateChange } from './authHandlers';
 import { loginUser, registerUser, signInWithGoogleUser, logoutUser, updateUserProfile } from './authActions';
 
+// Safari detection
+const isSafari = () => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  return userAgent.includes('safari') && !userAgent.includes('chrome');
+};
+
+// Mobile Safari detection
+const isMobileSafari = () => {
+  return isSafari() && /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -64,12 +75,104 @@ export const AuthProvider = ({ children }) => {
       try {
         console.log('🔄 Initializing auth...');
 
-        console.log("Just before supabase.auth.getSession")
-        const { data: { session }, error } = await supabase.auth.getSession();
-        console.log("Immediately after supabase.auth.getSession")
+        // If we're on the OAuth callback route, process tokens BEFORE asking for a session
+        try {
+          const currentUrl = new URL(window.location.href);
+          const isAuthCallback = currentUrl.pathname.startsWith('/auth/callback');
+
+          if (isAuthCallback) {
+            const hashParams = new URLSearchParams(currentUrl.hash.startsWith('#') ? currentUrl.hash.substring(1) : currentUrl.hash);
+            const searchParams = currentUrl.searchParams;
+
+            const oauthError = hashParams.get('error') || searchParams.get('error');
+            if (oauthError) {
+              console.error('❌ OAuth error on callback:', oauthError, hashParams.get('error_description') || searchParams.get('error_description'));
+            } else {
+              // Handle PKCE code flow first
+              const code = searchParams.get('code');
+              if (code) {
+                console.log('🔑 Exchanging authorization code for session...');
+                try {
+                  await supabase.auth.exchangeCodeForSession(code);
+                  // Clean the URL after successful processing
+                  window.history.replaceState({}, document.title, currentUrl.origin + '/auth/callback');
+                } catch (exchangeErr) {
+                  console.error('❌ Code exchange failed:', exchangeErr);
+                }
+              } else {
+                // Handle implicit flow tokens if present
+                const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
+                if (accessToken) {
+                  const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+                  const tokenType = hashParams.get('token_type') || searchParams.get('token_type') || 'bearer';
+                  const expiresIn = hashParams.get('expires_in') || searchParams.get('expires_in');
+                  const expiresAt = hashParams.get('expires_at') || searchParams.get('expires_at');
+
+                  console.log('🔐 Setting session from URL tokens...');
+                  try {
+                    await supabase.auth.setSession({
+                      access_token: accessToken,
+                      refresh_token: refreshToken || undefined,
+                      token_type: tokenType,
+                      expires_in: expiresIn ? parseInt(expiresIn) : undefined,
+                      expires_at: expiresAt ? parseInt(expiresAt) : undefined,
+                    });
+                    window.history.replaceState({}, document.title, currentUrl.origin + '/auth/callback');
+                  } catch (setErr) {
+                    console.error('❌ Setting session from URL tokens failed:', setErr);
+                  }
+                }
+              }
+            }
+          }
+        } catch (callbackProcessErr) {
+          console.error('⚠️ Error while pre-processing OAuth callback:', callbackProcessErr);
+        }
+
+        // Adjust timeout based on browser and device
+        let timeoutDuration = 10000; // Default 10 seconds
+        if (isMobileSafari()) {
+          timeoutDuration = 20000; // 20 seconds for mobile Safari
+        } else if (isSafari()) {
+          timeoutDuration = 15000; // 15 seconds for desktop Safari
+        }
+
+        console.log(`⏱️ Using ${timeoutDuration}ms timeout for ${isMobileSafari() ? 'Mobile Safari' : isSafari() ? 'Safari' : 'other browsers'}`);
+
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Session timeout')), timeoutDuration)
+        );
+
+        let session, error;
+
+        try {
+          const result = await Promise.race([sessionPromise, timeoutPromise]);
+          session = result.data?.session;
+          error = result.error;
+        } catch (timeoutError) {
+          console.warn('⚠️ Session check timed out, trying alternative approach...');
+
+          // Safari fallback: Try without timeout
+          if (isSafari()) {
+            try {
+              const fallbackResult = await supabase.auth.getSession();
+              session = fallbackResult.data?.session;
+              error = fallbackResult.error;
+              console.log('✅ Fallback session check succeeded');
+            } catch (fallbackError) {
+              console.error('❌ Fallback session check failed:', fallbackError);
+              error = fallbackError;
+            }
+          } else {
+            throw timeoutError;
+          }
+        }
+
+        // const { data: { session }, error } = await supabase.auth.getSession();
 
         console.log("Checking if mounted: ", mountedRef.current)
-        
+
         if (!mountedRef.current) return;
 
         if (error) {
@@ -116,6 +219,13 @@ export const AuthProvider = ({ children }) => {
         }
       }
     };
+
+    // Add small delay for Safari to prevent race conditions
+    if (isSafari()) {
+      setTimeout(initialize, 100);
+    } else {
+      initialize();
+    }
 
     return () => {
       mountedRef.current = false;
@@ -177,6 +287,9 @@ export const AuthProvider = ({ children }) => {
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-sm text-muted-foreground">Yükleniyor...</p>
+          {isSafari() && (
+            <p className="text-xs text-muted-foreground mt-2">Safari algılandı, biraz daha uzun sürebilir...</p>
+          )}
         </div>
       </div>
     );
