@@ -13,6 +13,7 @@ const AppLayout = () => {
   const isSmallDesktop = useMediaQuery('(min-width: 1024px) and (max-width: 1180px)');
   const location = useLocation();
 
+  // Delay localStorage access for Safari compatibility
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useLocalStorage('sidebarCollapsed', false);
   const [isProfileCollapsed, setIsProfileCollapsed] = useLocalStorage('profileCollapsed', isSmallDesktop);
   

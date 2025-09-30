@@ -38,8 +38,14 @@ function useLocalStorage(key, initialValue) {
                 }
             }
         };
-        window.addEventListener('storage', handleStorageChange);
+        
+        // Add delay for Safari to prevent storage access conflicts
+        const timeoutId = setTimeout(() => {
+            window.addEventListener('storage', handleStorageChange);
+        }, 100);
+        
         return () => {
+            clearTimeout(timeoutId);
             window.removeEventListener('storage', handleStorageChange);
         };
     }

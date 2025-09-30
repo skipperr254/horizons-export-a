@@ -8,10 +8,19 @@ const CookieConsentBanner = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const consent = localStorage.getItem('cookie_consent');
-    if (!consent) {
-      setIsVisible(true);
-    }
+    // Delay localStorage access for Safari compatibility
+    const timeoutId = setTimeout(() => {
+      try {
+        const consent = localStorage.getItem('cookie_consent');
+        if (!consent) {
+          setIsVisible(true);
+        }
+      } catch (error) {
+        console.warn('localStorage access failed in CookieConsentBanner:', error);
+      }
+    }, 200);
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const handleAccept = () => {

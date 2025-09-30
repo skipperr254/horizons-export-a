@@ -15,7 +15,18 @@ export function ThemeProvider({
 }) {
   const { user, updateUser, profile, loading: authLoading } = useAuth();
   const [theme, setThemeState] = useState(
-    () => localStorage.getItem(storageKey) || defaultTheme
+    () => {
+      // Delay localStorage access for Safari compatibility
+      if (typeof window !== 'undefined') {
+        try {
+          return localStorage.getItem(storageKey) || defaultTheme;
+        } catch (error) {
+          console.warn('localStorage access failed in ThemeProvider:', error);
+          return defaultTheme;
+        }
+      }
+      return defaultTheme;
+    }
   );
 
   useEffect(() => {
